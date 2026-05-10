@@ -4,13 +4,16 @@ import pandas as pd
 import akshare as ak
 import time
 import numpy as np
+from DataManager.CalendarManager import TradingCalendarAnalyzer
 
 
 class IndustryFlowAnalyzer:
 
     def __init__(self, config):
         self.config = config
-        self.today_str = datetime.now().strftime('%Y%m%d')
+        # 使用业务交易日而非物理时间
+        calendar_mgr = TradingCalendarAnalyzer()
+        self.today_str = calendar_mgr.get_last_trading_day()
         self.cache_filename = f"行业权重趋势_{self.today_str}.txt"
         self.cache_path = os.path.join(self.config.TEMP_DATA_DIRECTORY, self.cache_filename)
 

@@ -8,6 +8,7 @@ from openpyxl.utils import get_column_letter
 from sqlalchemy import create_engine
 import warnings
 from ConfigParser import Config  # 确保 Config.py 在同一环境或路径下
+from DataManager.CalendarManager import TradingCalendarAnalyzer
 
 if __name__ == "__main__":
     # --- 1. 配置与路径初始化 ---
@@ -414,7 +415,9 @@ if __name__ == "__main__":
         ws.column_dimensions[column].width = adjusted_width
 
     # --- 7. 保存文件 ---
-    today_str = datetime.now().strftime('%Y%m%d')
+    # 使用业务交易日而非物理时间
+    calendar_mgr = TradingCalendarAnalyzer()
+    today_str = calendar_mgr.get_last_trading_day()
     excel_file = os.path.join(REPORT_OUTPUT_DIR, f"KDJ报告_{today_str}.xlsx")
     wb.save(excel_file)
     print(f"🎉 Excel 文件已生成：{excel_file}")

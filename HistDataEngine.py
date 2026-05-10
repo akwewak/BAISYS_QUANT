@@ -54,7 +54,9 @@ class StockSyncEngine:
             raise RuntimeError("数据库引擎初始化失败") from e
 
         self.global_start = "20250301"
-        self.today = datetime.datetime.now().strftime("%Y%m%d")
+        # 使用业务交易日而非物理时间
+        calendar_mgr = TradingCalendarAnalyzer()
+        self.today = calendar_mgr.get_last_trading_day()
         self.today_dt = pd.to_datetime(self.today).normalize()
         self.base_data_dir = self.config.TEMP_DATA_DIRECTORY
         os.makedirs(self.base_data_dir, exist_ok=True)
@@ -307,10 +309,11 @@ class StockSyncEngine:
         """主运行函数：研报过滤 + K线数据同步"""
 
         if target_date is None:
-            target_date = TradingCalendarAnalyzer().get_last_trading_day()
-            pass
-        if target_date is None:
-            target_date = datetime.datetime.now().strftime("%Y%m%d")
+            # 优先使用业务交易日，如果失败则使用初始化时的 today
+            try:
+                target_date = TradingCalendarAnalyzer().get_last_trading_day()
+            except Exception:
+                target_date = self.today  # 使用初始化时获取的业务交易日
 
         self.today_str = target_date
         self.today_dt = pd.to_datetime(target_date).normalize()
