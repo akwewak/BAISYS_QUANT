@@ -161,7 +161,6 @@ class Config:
             )
         
         self.FUND_FLOW_PERIODS = raw_periods
-        self.MOMENTUM_WINDOW = ff.getint('MOMENTUM_WINDOW', fallback=5)
 
         # 读取技术指标信号配置
         ti = config['TECHNICAL_INDICATORS']
@@ -203,19 +202,6 @@ class Config:
         
         # 第二周期始终启用
         self.ENABLE_MACD_SECOND = True
-        kdj_str = ti.get('KDJ_PARAMS', fallback='9,3,3')
-        self.KDJ_PARAMS = tuple(int(p.strip()) for p in kdj_str.split(','))
-        self.RSI_PERIOD = ti.getint('RSI_PERIOD', fallback=14)
-        self.CCI_PERIOD = ti.getint('CCI_PERIOD', fallback=14)
-        boll_str = ti.get('BOLL_PARAMS', fallback='20,2')
-        self.BOLL_PARAMS = tuple(int(p.strip()) for p in boll_str.split(','))
-
-        # 读取数据同步配置
-        ds = config['DATA_SYNC']
-        self.SYNC_RETRIES = ds.getint('SYNC_RETRIES', fallback=3)
-        self.SYNC_INTERVAL = ds.getint('SYNC_INTERVAL', fallback=2)
-        self.CACHE_TTL_HOURS = ds.getint('CACHE_TTL_HOURS', fallback=24)
-        self.ENABLE_CACHE = ds.getboolean('ENABLE_CACHE', fallback=True)
 
         for key, val in self.__dict__.items():
             if val is None:
