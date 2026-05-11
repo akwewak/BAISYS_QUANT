@@ -943,6 +943,8 @@ class StockAnalyzer:
             else:
                 final_df[col_name] = 0.0
 
+       
+
         # 资金流数据标准化处理
         fund_flow_cols = [
             period_map[p][1] for p in self.config.FUND_FLOW_PERIODS if p in period_map
@@ -950,42 +952,56 @@ class StockAnalyzer:
         if any(col in final_df.columns for col in fund_flow_cols):
             final_df = utils._normalize_fund_data(final_df)
 
-        # 资金动能分析（需要所有配置的周期都存在）
-        required_cols = [period_map[p][1] for p in self.config.FUND_FLOW_PERIODS if p in period_map]
-        if all(col in final_df.columns for col in required_cols):
-            try:
-                result = final_df.apply(
-                    lambda row: self.momentum_analyzer.analyze(row), axis=1
-                )
-                momentum_df = pd.json_normalize(result)
-                if "综合_交易信号" in momentum_df.columns:
-                    final_df["资金动能"] = momentum_df["综合_交易信号"]
-                elif "资金动能状态" in momentum_df.columns:
-                    final_df["资金动能"] = momentum_df["资金动能状态"]
-                else:
-                    final_df["资金动能"] = result.astype(str)
-                    
-                if "综合_动能评分" in momentum_df.columns:
-                    final_df["资金动能评分"] = momentum_df["综合_动能评分"]
-                elif "资金动能评分" in momentum_df.columns:
-                    final_df["资金动能评分"] = momentum_df["资金动能评分"]
-                print(" - 资金动能新分析器运行成功。")
-            except Exception as e:
-                self.logger.error(f"运行 FundMomentumAnalyzer 失败: {e}")
-                final_df["资金动能"] = "N/A"
-        else:
-            final_df["资金动能"] = "无数据"
-        
-        return final_df
+        fund_columns_to_normalize = [
+            col for col in [f5_col, f10_col, f20_col] if col in final_df.columns
+        ]
+        if fund_columns_to_normalize:
 
-    def _merge_signal_data(
-        self,
-        final_df: pd.DataFrame,
-        processed_data: Dict[str, pd.DataFrame]
-    ) -> pd.DataFrame:
-        """
-        合并信号数据：强势股、连涨天数、量价齐升、持续放量
-        """
+            for col in fund_columns_to_normalize:
+
+                def normalize_single_value(val):
+                    if pd.isna(val) or val == "N/A" or val == "":
+                        return 0.0
+                    val_str = str(val).strip()
+                    try:
+                        if "亿" in val_str:
+                            return float(val_str.replace("亿", "")) * 10000
+                        elif "万" in val_str:
+                            return float(val_str.replace("万", ""))
+                        else:
+                            return float(val_str)
+                    except ValueError:
+                        return 0.0
+
+                final_df[col] = final_df[col].apply(normalize_single_value)
+
+        if all(col in final_df.columns for col in [f5_col, f10_col, f20_col]):
+            fund_columns_to_normalize = [
+                col for col in [f5_col, f10_col, f20_col] if col in final_df.columns
+            ]
+            if fund_columns_to_normalize:
+                try:
+                    result = final_df.apply(
+                        lambda row: self.momentum_analyzer.analyze(row), axis=1
+                    )
+                    momentum_df = pd.json_normalize(result)
+                    if "综合_交易信号" in momentum_df.columns:
+                        final_df["资金动能"] = momentum_df["综合_交易信号"]
+                    elif "资金动能状态" in momentum_df.columns:
+                        final_df["资金动能"] = momentum_df["资金动能状态"]
+                    else:
+                        final_df["资金动能"] = result.astype(str)
+                    if "综合_动能评分" in momentum_df.columns:
+                        final_df["资金动能评分"] = momentum_df["综合_动能评分"]
+                    elif "资金动能评分" in momentum_df.columns:
+                        final_df["资金动能评分"] = momentum_df["资金动能评分"]
+                    print(" - 资金动能新分析器运行成功。")
+                except Exception as e:
+                    self.logger.error(f"运行 FundMomentumAnalyzer 失败: {e}")
+                    final_df["资金动能"] = "N/A"
+            else:
+                final_df["资金动能"] = "无数据"
+
         # 处理强势股数据
         strong_df = processed_data.get("strong_stocks_raw", pd.DataFrame())
         if not strong_df.empty and "股票代码" in strong_df.columns:
