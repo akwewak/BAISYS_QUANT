@@ -12,7 +12,7 @@ import tushare as ts
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 from typing import List, Set, Optional
-from FormatManager.ShareCodeFormatMgr import format_stock_code
+from DataManager.ShareCodeFormatMgr import format_stock_code
 from ConfigParser import Config
 
 

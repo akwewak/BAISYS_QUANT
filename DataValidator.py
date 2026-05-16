@@ -124,7 +124,7 @@ class DataValidator:
         fixed_count = 0
         
         # 标准化股票代码
-        from FormatManager.ShareCodeFormatMgr import format_stock_code
+        from DataManager.ShareCodeFormatMgr import format_stock_code
         
         def normalize_code(code):
             nonlocal fixed_count
